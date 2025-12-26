@@ -1,0 +1,5 @@
+{
+  "name": "CryptoCalc Pro",
+  "description": "Uma calculadora avançada de criptomoedas com conversão em tempo real de BRL para BTC, ETH, BNB e USDT, incluindo unidades mínimas e insights de mercado via IA.",
+  "requestFramePermissions": []
+}
