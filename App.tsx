@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Wallet, RefreshCw, AlertCircle, Info, TrendingUp, DollarSign, ExternalLink, Globe } from 'lucide-react';
+import { Wallet, RefreshCw, AlertCircle, Info, TrendingUp, DollarSign, ExternalLink, Globe, ShieldAlert, Zap, Calculator, ChevronRight, ArrowRightLeft } from 'lucide-react';
 import { fetchCryptoPrices } from './services/cryptoService';
 import { generateMarketInsight } from './services/geminiService';
 import { MarketState, InsightData, CryptoData, Currency } from './types';
@@ -16,6 +16,7 @@ const SUPPORTED_CURRENCIES: Currency[] = [
 const App: React.FC = () => {
   const [currency, setCurrency] = useState<Currency>(SUPPORTED_CURRENCIES[0]);
   const [inputValue, setInputValue] = useState<string>('1.000,00');
+  const [selectedSimCrypto, setSelectedSimCrypto] = useState<string>('bitcoin');
   const [market, setMarket] = useState<MarketState>({
     prices: {},
     loading: true,
@@ -72,9 +73,6 @@ const App: React.FC = () => {
   };
 
   const getNumericAmount = () => {
-    // Parse numeric value based on locale-aware string
-    // This is a simple fallback since complex locale parsing is hard in JS
-    // We strip non-numeric except the intended decimal separator
     const clean = inputValue.replace(/[^0-9]/g, '');
     return parseInt(clean, 10) / 100 || 0;
   };
@@ -83,7 +81,6 @@ const App: React.FC = () => {
 
   const handleCurrencyChange = (newCurrency: Currency) => {
     setCurrency(newCurrency);
-    // Reset input to current numeric value formatted for new locale
     const currentNumeric = amount;
     setInputValue(currentNumeric.toLocaleString(newCurrency.locale, {
       minimumFractionDigits: 2,
@@ -91,8 +88,18 @@ const App: React.FC = () => {
     }));
   };
 
+  const currentCryptoData = market.prices[selectedSimCrypto];
+
   return (
     <div className="min-h-screen text-slate-200 pb-20 selection:bg-amber-500/30">
+      {/* Disclaimer Banner superior fixo */}
+      <div className="bg-amber-500/10 border-b border-amber-500/20 py-2 px-6 flex justify-center items-center gap-2 sticky top-0 z-50 backdrop-blur-md">
+        <ShieldAlert size={14} className="text-amber-500" />
+        <span className="text-[10px] md:text-xs font-black text-amber-500 uppercase tracking-widest text-center">
+          Simulador Informativo: Esta plataforma não é uma corretora e não realiza compra/venda de ativos.
+        </span>
+      </div>
+
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="absolute top-[-10%] left-[-5%] w-[50%] h-[50%] bg-emerald-500/5 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-amber-500/5 blur-[120px] rounded-full" />
@@ -106,9 +113,9 @@ const App: React.FC = () => {
           <div>
             <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-2">
               CryptoCalc<span className="text-amber-500">Pro</span>
-              <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 uppercase tracking-widest font-bold h-fit mt-1">v2.5</span>
+              <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 uppercase tracking-widest font-bold h-fit mt-1">v2.8</span>
             </h1>
-            <p className="text-slate-500 text-sm font-medium">Conversão multi-moeda de ativos digitais.</p>
+            <p className="text-slate-500 text-sm font-medium">Calculadora de Simulação de Portfólio Digital.</p>
           </div>
         </div>
 
@@ -159,14 +166,14 @@ const App: React.FC = () => {
         )}
 
         {/* Hero Input Section */}
-        <div className="glass rounded-[2.5rem] p-10 mb-12 shadow-2xl relative overflow-hidden group border-white/5">
+        <div className="glass rounded-[2.5rem] p-10 mb-6 shadow-2xl relative overflow-hidden group border-white/5">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 blur-[100px] rounded-full pointer-events-none group-hover:bg-amber-500/15 transition-all duration-700" />
           
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-8">
               <label className="flex items-center gap-2 text-xs font-black text-amber-500 uppercase tracking-[0.2em] mb-4">
                 <Globe size={14} />
-                Aporte em {currency.code.toUpperCase()} ({currency.symbol})
+                Valor que você tem em {currency.code.toUpperCase()} ({currency.symbol})
               </label>
               <div className="relative group/input">
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 text-5xl font-black text-slate-700 group-focus-within/input:text-amber-500 transition-colors duration-300">
@@ -183,35 +190,110 @@ const App: React.FC = () => {
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-6 text-slate-500 text-xs font-medium">
                 <div className="flex items-center gap-2">
-                  <Info size={14} className="text-slate-600" />
-                  <span>Câmbio via CoinGecko ({currency.code.toUpperCase()})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp size={14} className="text-emerald-500/50" />
-                  <span>Precificação Global 24h</span>
+                  <ShieldAlert size={14} className="text-amber-600" />
+                  <span className="font-bold text-slate-400">Ambiente de Simulação - Sem transações reais</span>
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-4 flex flex-col gap-4">
               <div className="p-6 bg-slate-950/50 rounded-3xl border border-slate-800/50 backdrop-blur-sm">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-2">Simulação Base</span>
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-2">Montante Calculado</span>
                 <div className="text-3xl font-black text-white mono truncate">
                   {currency.symbol} {amount.toLocaleString(currency.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="flex-1 p-4 bg-slate-900/30 rounded-2xl border border-slate-800/40">
-                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-1">Última Sync</span>
-                  <div className="text-xs font-bold text-slate-400 mono">
-                    {market.lastUpdated ? market.lastUpdated.toLocaleTimeString(currency.locale) : '--:--:--'}
+            </div>
+          </div>
+        </div>
+
+        {/* Purchase Simulator Box */}
+        <div className="mb-12 glass rounded-[2rem] p-8 border-amber-500/10 border relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full" />
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-500/20 rounded-xl">
+                        <Calculator size={20} className="text-amber-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-black text-white uppercase tracking-tighter">Calculadora de Compra Simulada</h2>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Veja quanto você vai receber de Crypto</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    {Object.values(market.prices).map(c => (
+                        <button 
+                            key={c.id}
+                            onClick={() => setSelectedSimCrypto(c.id)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all ${selectedSimCrypto === c.id ? 'bg-amber-500 border-amber-400 text-slate-900 shadow-lg shadow-amber-500/20' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'}`}
+                        >
+                            <img src={c.image} className={`w-4 h-4 ${selectedSimCrypto === c.id ? '' : 'grayscale opacity-50'}`} alt="" />
+                            <span className="text-[10px] font-black uppercase">{c.symbol}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-slate-950/40 p-8 rounded-3xl border border-slate-800/30">
+                <div className="md:col-span-5">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-3">Valor que você tem em {currency.code.toUpperCase()}</label>
+                    <div className="text-4xl font-black text-white mono">
+                        <span className="text-slate-700 mr-2">{currency.symbol}</span>
+                        {amount.toLocaleString(currency.locale, { minimumFractionDigits: 2 })}
+                    </div>
+                </div>
+
+                <div className="md:col-span-2 flex justify-center">
+                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700 shadow-lg group">
+                        <ArrowRightLeft size={20} className="text-amber-500 group-hover:rotate-180 transition-transform duration-500" />
+                    </div>
+                </div>
+
+                <div className="md:col-span-5">
+                    <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest block mb-3">Valor total que você vai comprar</label>
+                    <div className="text-4xl font-black text-white mono truncate">
+                        {currentCryptoData 
+                            ? (amount / currentCryptoData.current_price).toLocaleString(currency.locale, { maximumFractionDigits: 8 })
+                            : '0.00000000'
+                        }
+                        <span className="text-xl text-slate-500 ml-3 uppercase">{currentCryptoData?.symbol || '---'}</span>
+                    </div>
+                    {currentCryptoData && (
+                        <div className="mt-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                            Baseado em 1 {currentCryptoData.symbol.toUpperCase()} = {currency.symbol} {currentCryptoData.current_price.toLocaleString(currency.locale)}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+
+        {/* Quick Results Bar */}
+        <div className="mb-12 px-2">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap size={14} className="text-amber-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Preview Geral de Conversão</span>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            {(Object.values(market.prices) as CryptoData[]).map((crypto) => {
+              const converted = amount / crypto.current_price;
+              return (
+                <div key={`quick-${crypto.id}`} className="bg-slate-900/60 border border-slate-800/50 rounded-2xl px-5 py-4 flex flex-col gap-1 transition-all hover:border-amber-500/30 hover:bg-slate-900">
+                  <div className="flex items-center gap-2">
+                    <img src={crypto.image} className="w-4 h-4 grayscale opacity-50" alt="" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{crypto.symbol}</span>
+                  </div>
+                  <div className="text-lg font-black text-white mono tracking-tighter">
+                    {converted.toLocaleString(currency.locale, { maximumFractionDigits: converted < 0.01 ? 8 : 4 })}
+                  </div>
+                  <div className="text-[9px] font-bold text-slate-600 mono">
+                    {currency.symbol} {crypto.current_price.toLocaleString(currency.locale)} / un
                   </div>
                 </div>
-                <div className="p-4 bg-slate-900/30 rounded-2xl border border-slate-800/40 flex items-center justify-center">
-                  <ExternalLink size={16} className="text-slate-700" />
-                </div>
-              </div>
-            </div>
+              );
+            })}
+            {market.loading && Object.keys(market.prices).length === 0 && (
+              <div className="text-xs italic text-slate-600 animate-pulse">Calculando estimativas em tempo real...</div>
+            )}
           </div>
         </div>
 
@@ -251,14 +333,14 @@ const App: React.FC = () => {
                 <h3 className="font-black text-white tracking-widest uppercase text-sm">CryptoCalc Pro Enterprise</h3>
               </div>
               <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                Suporte nativo para BRL, USD e EUR. Conversões globais com precisão de 8 casas decimais para satoshis e unidades secundárias.
+                Esta aplicação é exclusivamente uma calculadora para fins de simulação e planejamento. Não mantemos custódia de valores nem realizamos intermediação financeira.
               </p>
             </div>
             
             <div className="md:col-span-3 space-y-6">
-              <h5 className="font-black text-white uppercase text-[10px] tracking-[0.3em]">Protocolo de Dados</h5>
+              <h5 className="font-black text-white uppercase text-[10px] tracking-[0.3em]">Ambiente Simulado</h5>
               <ul className="space-y-4">
-                {['Global Currency Support', 'IEEE 754 Arithmetic', 'Gemini AI Analysis', 'Market Cap Order'].map(item => (
+                {['Sem Compra/Venda', 'Estimativas Informativas', 'Cálculos de Portfólio', 'Market Cap Histórico'].map(item => (
                   <li key={item} className="flex items-center gap-3 group cursor-default">
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-amber-500 transition-colors" />
                     <span className="text-xs font-bold text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-widest">{item}</span>
@@ -268,31 +350,25 @@ const App: React.FC = () => {
             </div>
 
             <div className="md:col-span-4">
-              <div className="bg-slate-900/40 p-8 rounded-[2rem] border border-slate-800/50 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                  <AlertCircle size={80} />
+              <div className="bg-amber-500/5 p-8 rounded-[2rem] border border-amber-500/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-amber-500">
+                  <ShieldAlert size={80} />
                 </div>
-                <h5 className="font-black text-white text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <AlertCircle size={14} className="text-amber-500" />
-                  Aviso Legal
+                <h5 className="font-black text-amber-500 text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <ShieldAlert size={14} />
+                  Aviso Crítico
                 </h5>
-                <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                  Os valores exibidos em {currency.code.toUpperCase()} dependem da latência das exchanges mundiais. Verifique sempre com sua corretora antes de realizar operações financeiras.
+                <p className="text-[11px] text-slate-400 leading-relaxed font-bold">
+                  IMPORTANTE: NÃO SOMOS CORRETORA. As conversões exibidas são estimativas baseadas em dados de mercado globais. Não há garantia de preço para execução em exchanges reais.
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="mt-16 pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">
-              © 2024 DIGITAL ASSETS LTD. ALL RIGHTS RESERVED.
-            </div>
+          <div className="mt-16 pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">
+            <span>© 2024 DIGITAL ASSETS LTD. SIMULADOR CALCULADORA.</span>
             <div className="flex gap-8">
-              {['BRL Sync', 'USD Spot', 'EUR Fix', 'API V3'].map(link => (
-                <span key={link} className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">
-                  {link}
-                </span>
-              ))}
+              <span className="text-amber-500 font-bold">AVISO: NÃO É UMA CORRETORA</span>
             </div>
           </div>
         </footer>

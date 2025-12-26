@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { CryptoData, Currency } from '../types';
-import { ArrowUpRight, ArrowDownRight, Coins, Calculator, Layers } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Coins, Layers } from 'lucide-react';
 
 interface CryptoCardProps {
   crypto: CryptoData;
@@ -10,8 +10,22 @@ interface CryptoCardProps {
 }
 
 export const CryptoCard: React.FC<CryptoCardProps> = ({ crypto, amount, currency }) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const prevPriceRef = useRef(crypto.current_price);
+  const prevAmountRef = useRef(amount);
+
   const cryptoAmount = amount / crypto.current_price;
   const minUnits = cryptoAmount * crypto.min_unit_factor;
+
+  useEffect(() => {
+    if (prevPriceRef.current !== crypto.current_price || prevAmountRef.current !== amount) {
+      setIsUpdating(true);
+      const timer = setTimeout(() => setIsUpdating(false), 1000);
+      prevPriceRef.current = crypto.current_price;
+      prevAmountRef.current = amount;
+      return () => clearTimeout(timer);
+    }
+  }, [crypto.current_price, amount]);
 
   const formatCrypto = (val: number) => {
     if (val === 0) return "0,00";
@@ -50,8 +64,8 @@ export const CryptoCard: React.FC<CryptoCardProps> = ({ crypto, amount, currency
 
       <div className="space-y-6">
         <div>
-          <label className="text-[10px] uppercase tracking-[0.2em] text-slate-600 font-black mb-2 block">Cotação de Mercado</label>
-          <div className="text-2xl font-black text-white mono tracking-tighter">
+          <label className="text-[10px] uppercase tracking-[0.2em] text-slate-600 font-black mb-2 block">Referência de Mercado</label>
+          <div className={`text-2xl font-black transition-all duration-700 mono tracking-tighter ${isUpdating ? 'text-amber-400 scale-[1.02]' : 'text-white'}`}>
             {currency.symbol} {crypto.current_price.toLocaleString(currency.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
@@ -59,23 +73,23 @@ export const CryptoCard: React.FC<CryptoCardProps> = ({ crypto, amount, currency
         <div className="pt-6 border-t border-slate-800/80">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <label className="text-[10px] uppercase tracking-[0.2em] text-amber-500 font-black mb-2 block">Valor Convertido</label>
-              <div className="text-3xl font-black text-white mono break-all tracking-tighter">
+              <label className="text-[10px] uppercase tracking-[0.2em] text-amber-500 font-black mb-2 block">Simulação de Conversão</label>
+              <div className={`text-3xl font-black transition-all duration-700 mono break-all tracking-tighter ${isUpdating ? 'text-amber-400 scale-[1.02]' : 'text-white'}`}>
                 {formatCrypto(cryptoAmount)} <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">{crypto.symbol}</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-900/40 rounded-2xl p-4 border border-slate-800/50 group-hover:bg-slate-900/60 transition-colors">
+          <div className={`bg-slate-900/40 rounded-2xl p-4 border transition-all duration-700 group-hover:bg-slate-900/60 ${isUpdating ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-800/50'}`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Layers size={12} className="text-amber-500/50" />
-                <label className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black">Menor Unidade ({crypto.min_unit_name})</label>
+                <Layers size={12} className={`transition-colors duration-700 ${isUpdating ? 'text-amber-400' : 'text-amber-500/50'}`} />
+                <label className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black">Escala Mínima Estimada</label>
               </div>
               <Coins size={12} className="text-slate-700" />
             </div>
-            <div className="text-sm font-bold text-slate-300 mono truncate">
-              {formatMinUnits(minUnits)}
+            <div className={`text-sm font-bold transition-colors duration-700 mono truncate ${isUpdating ? 'text-amber-200' : 'text-slate-300'}`}>
+              {formatMinUnits(minUnits)} <span className="text-[10px] opacity-50">{crypto.min_unit_name}</span>
             </div>
           </div>
         </div>
